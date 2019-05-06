@@ -2,6 +2,8 @@ package main
 
 import (
 	"cachego/cache"
+	"fmt"
+	"time"
 )
 
 func main() {
@@ -31,5 +33,7 @@ func main() {
 	d.Expiration = 5
 	d.Value = "5"
 	cache.LocalCache.Set(d)
-
+	fmt.Println(cache.LocalCache.Get("test5"))
+	time.Sleep(6 * time.Second)
+	fmt.Println(cache.LocalCache.Get("test5"))
 }

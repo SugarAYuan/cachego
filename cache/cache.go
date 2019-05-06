@@ -29,17 +29,26 @@ func InitLocalCache() {
 	}
 	go func(c *Cache) {
 		for {
-			c.hmu.RLock()
-			if c.Len() < 1 {
-				c.hmu.RUnlock()
-				continue
-			}
-			if c.dataHeap[c.Len()-1].cleanTime.Before(time.Now()) {
-				c.hmu.RUnlock()
-				d := c.pop()
-				c.ttl(d.Key)
-			} else {
-				c.hmu.RUnlock()
+
+			select {
+			case <-time.Tick(60 * time.Second):
+			LABEL1:
+				for {
+					c.hmu.RLock()
+					if c.Len() < 1 {
+						c.hmu.RUnlock()
+						break LABEL1
+					}
+					if c.dataHeap[c.Len()-1].cleanTime.Before(time.Now()) {
+						c.hmu.RUnlock()
+						d := c.pop()
+						c.ttl(d.Key)
+					} else {
+						c.hmu.RUnlock()
+						break LABEL1
+					}
+				}
+
 			}
 
 		}
@@ -95,6 +104,10 @@ func (c *Cache) Get(key string) *Data {
 	c.mu.RLock()
 	if data, ok = c.datas[key]; !ok {
 		data = nil
+	} else {
+		if data.cleanTime.Before(time.Now()) {
+			data = nil
+		}
 	}
 	c.mu.RUnlock()
 	return data
